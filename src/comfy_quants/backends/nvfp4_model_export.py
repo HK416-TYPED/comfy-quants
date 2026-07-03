@@ -15,6 +15,19 @@ to the compute dtype (loads & correct, no speedup).
 Block math + pack + the ``to_blocked`` swizzle live in
 :mod:`comfy_quants.formats.nvfp4_blocked` (pure torch, bit-faithful to comfy-kitchen's
 eager ``quantize_nvfp4``).
+
+ConvRot (EXPERIMENTAL, runtime-pending, default OFF): with ``convrot=True`` each
+selected weight is rotated by the group-256 regular Hadamard (built and applied at
+the SOURCE WEIGHT dtype, exactly like the int8_tensorwise writer) before the NVFP4
+block quantization, and the layer marker gains ``convrot``/``convrot_groupsize``
+keys (int8_tensorwise marker convention; keys omitted for layers whose
+``in_features`` is not divisible by the group size — those layers are stored as
+plain nvfp4). With ``convrot=False`` the output is content-identical to the
+pre-ConvRot writer (identical tensor bytes and header-metadata key/value set; NOT
+whole-file byte-identical — safetensors serializes ``__metadata__`` in
+nondeterministic key order). **Today's stock ComfyUI ignores the convrot keys on
+the nvfp4 branch and would silently produce wrong outputs** — do not publish
+rotated checkpoints until the comfy-kitchen/ComfyUI runtime support lands.
 """
 
 from __future__ import annotations
@@ -44,6 +57,7 @@ from comfy_quants.backends.inference_model_export import (
 )
 from comfy_quants.backends.safetensors_source import SafetensorsTensorSource
 from comfy_quants.core.errors import PayloadWriteError
+from comfy_quants.formats.convrot import CONVROT_GROUP_SIZE, build_hadamard, rotate_weight
 from comfy_quants.formats.nvfp4 import NVFP4_FORMAT_NAME, nvfp4_checkpoint_quant_config
 from comfy_quants.formats.nvfp4_blocked import BLOCK_SIZE, quantize_nvfp4_block
 from comfy_quants.utils.hashing import hash_file
@@ -73,6 +87,10 @@ class NvFp4CheckpointExportReport:
     scale_granularity: str = "block"
     scale_axis: str | int | None = "in_features"
     block_size: int = BLOCK_SIZE
+    convrot: bool = False
+    convrot_groupsize: int = CONVROT_GROUP_SIZE
+    rotated_tensor_count: int = 0
+    nonrotated_tensor_count: int = 0
     source_layout: str = "single_file"
     source_tensor_count: int = 0
     source_file_count: int = 0
@@ -127,12 +145,36 @@ def _marker_tensor(conf: dict[str, Any], *, device: str):
     return torch.tensor(list(data), dtype=torch.uint8, device=device)
 
 
+def _quantize_nvfp4_maybe_convrot(tensor, *, convrot: bool, group_size: int) -> tuple[Any, Any, Any, bool]:
+    """NVFP4 block quantization, optionally ConvRot-rotated first.
+
+    Returns ``(packed_weight, weight_scale, weight_scale_2, rotated)``. The rotation
+    follows the int8_tensorwise writer's recipe exactly: the group-size regular
+    Hadamard is built and applied at the SOURCE WEIGHT dtype (not fp32), gated on
+    ``in_features % group_size == 0`` (ineligible layers are stored as plain nvfp4).
+    Both scales are computed on the rotated weight by the unchanged bit-faithful
+    :func:`quantize_nvfp4_block` path.
+    """
+    w = tensor.detach()
+    if w.dim() != 2:
+        raise PayloadWriteError("nvfp4 export requires a rank-2 weight tensor")
+    rotated = False
+    if convrot and w.shape[1] % group_size == 0:
+        hadamard = build_hadamard(group_size, device=w.device, dtype=w.dtype)
+        w = rotate_weight(w, hadamard, group_size)
+        rotated = True
+    qweight, weight_scale, weight_scale_2 = quantize_nvfp4_block(w)
+    return qweight, weight_scale, weight_scale_2, rotated
+
+
 def write_nvfp4_inference_checkpoint_from_safetensors(
     *,
     source_checkpoint: str | Path,
     output_checkpoint: str | Path,
     tensor_index: dict[str, Any],
     target_dtype: str | None = None,
+    convrot: bool = False,
+    convrot_groupsize: int = CONVROT_GROUP_SIZE,
     device: str = "auto",
     strict: bool = True,
     config_source: str | Path | None = None,
@@ -169,6 +211,7 @@ def write_nvfp4_inference_checkpoint_from_safetensors(
     dtype_counts: dict[str, int] = {}
     copied = 0
     quantized = 0
+    rotated_count = 0
     source_files = _iter_source_files(source)
     output_resolved = output_path.resolve(strict=False)
     source_file_paths = {path.resolve(strict=False) for path, _names in source_files}
@@ -184,6 +227,7 @@ def write_nvfp4_inference_checkpoint_from_safetensors(
         source_file_count=len(source_files),
         selected_tensor_count=len(selected_names),
         block_size=BLOCK_SIZE,
+        convrot=bool(convrot),
     )
     source_header_metadata: dict[str, str] = {}
     for source_file_index, (source_file, tensor_names) in enumerate(source_files, start=1):
@@ -221,16 +265,21 @@ def write_nvfp4_inference_checkpoint_from_safetensors(
                     tensor_for_quant = tensor.to(device=execution_device_obj, non_blocking=True)
                 else:
                     tensor_for_quant = tensor
-                qweight, weight_scale, weight_scale_2 = quantize_nvfp4_block(tensor_for_quant)
+                qweight, weight_scale, weight_scale_2, rotated = _quantize_nvfp4_maybe_convrot(
+                    tensor_for_quant, convrot=convrot, group_size=convrot_groupsize
+                )
                 layer = _layer_name_from_weight(tensor_name)
                 output_tensors[tensor_name] = qweight.detach().to(device="cpu").contiguous()
                 output_tensors[f"{layer}.weight_scale"] = weight_scale.detach().to(device="cpu").contiguous()
                 output_tensors[f"{layer}.weight_scale_2"] = weight_scale_2.detach().to(device="cpu").contiguous()
-                output_tensors[f"{layer}.comfy_quant"] = _marker_tensor(nvfp4_checkpoint_quant_config(), device="cpu")
+                marker = nvfp4_checkpoint_quant_config(convrot=rotated, convrot_groupsize=convrot_groupsize)
+                output_tensors[f"{layer}.comfy_quant"] = _marker_tensor(marker, device="cpu")
                 dtype_counts["uint8"] = dtype_counts.get("uint8", 0) + 2  # packed weight + comfy_quant
                 dtype_counts["float8_e4m3fn"] = dtype_counts.get("float8_e4m3fn", 0) + 1
                 dtype_counts["float32"] = dtype_counts.get("float32", 0) + 1
                 quantized += 1
+                if rotated:
+                    rotated_count += 1
                 _emit_progress(
                     progress,
                     stage="quantize_tensor",
@@ -238,6 +287,7 @@ def write_nvfp4_inference_checkpoint_from_safetensors(
                     tensor_name=tensor_name,
                     quantized_tensor_count=quantized,
                     selected_tensor_count=len(selected_names),
+                    convrot=rotated,
                     execution_device=execution_device,
                 )
                 del qweight, weight_scale, weight_scale_2
@@ -246,21 +296,23 @@ def write_nvfp4_inference_checkpoint_from_safetensors(
 
     _maybe_add_index_timestep_zero(output_tensors, dtype_counts, tensor_index, metadata)
 
-    output_metadata = _merged_output_metadata(
-        source_header_metadata,
-        metadata,
-        {
-            "artifact_target": "comfyui_diffusion_model",
-            "artifact_contract": "qwen_image_nvfp4_inference_checkpoint.v1",
-            "target_dtype": resolved_target_dtype,
-            "quant_storage_dtype": "uint8",
-            "scale_dtype": "float8_e4m3fn",
-            "per_tensor_scale_dtype": "float32",
-            "scale_granularity": "block",
-            "block_size": BLOCK_SIZE,
-            "quantized_tensor_count": quantized,
-        },
-    )
+    artifact_fields: dict[str, Any] = {
+        "artifact_target": "comfyui_diffusion_model",
+        "artifact_contract": "qwen_image_nvfp4_inference_checkpoint.v1",
+        "target_dtype": resolved_target_dtype,
+        "quant_storage_dtype": "uint8",
+        "scale_dtype": "float8_e4m3fn",
+        "per_tensor_scale_dtype": "float32",
+        "scale_granularity": "block",
+        "block_size": BLOCK_SIZE,
+        "quantized_tensor_count": quantized,
+    }
+    if convrot:
+        # Only stamped for rotated exports so that convrot=False output stays
+        # content-identical to the pre-ConvRot writer (same metadata key/value set).
+        artifact_fields["convrot"] = True
+        artifact_fields["convrot_groupsize"] = int(convrot_groupsize)
+    output_metadata = _merged_output_metadata(source_header_metadata, metadata, artifact_fields)
     if execution_device_obj.type == "cuda":
         torch.cuda.synchronize(execution_device_obj)
         cuda_peak_allocated = int(torch.cuda.max_memory_allocated(execution_device_obj))
@@ -325,6 +377,10 @@ def write_nvfp4_inference_checkpoint_from_safetensors(
         requested_device=requested_device,
         execution_device=execution_device,
         output_tensor_device="cpu",
+        convrot=bool(convrot),
+        convrot_groupsize=int(convrot_groupsize),
+        rotated_tensor_count=rotated_count,
+        nonrotated_tensor_count=quantized - rotated_count,
         source_layout=source.layout,
         source_tensor_count=len(source.file_map),
         source_file_count=len(set(source.file_map.values())),

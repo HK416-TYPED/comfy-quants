@@ -122,8 +122,11 @@ comfy-quants export-model-nvfp4 \
   --json
 ```
 
-Requires `quant.target_dtype: nvfp4` in the config. Guide:
-[`quantization/nvfp4.md`](quantization/nvfp4.md).
+Requires `quant.target_dtype: nvfp4` in the config. `--convrot` /
+`--convrot-groupsize` (default off, group 256) apply the EXPERIMENTAL ConvRot weight
+rotation — **no released runtime honors the nvfp4 convrot marker keys yet**; rotated
+checkpoints silently produce wrong outputs in today's stock ComfyUI (runtime bring-up
+only). Guide: [`quantization/nvfp4.md`](quantization/nvfp4.md).
 
 ## INT4 commands
 

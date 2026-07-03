@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -15,6 +16,7 @@ from comfy_quants.cli.commands_export_model import _resolve_source
 from comfy_quants.cli.common import local_path, print_json
 from comfy_quants.core.config import load_quant_config
 from comfy_quants.core.errors import ConfigurationError
+from comfy_quants.formats.convrot import CONVROT_GROUP_SIZE
 from comfy_quants.formats.nvfp4 import NVFP4_FORMAT_NAME
 from comfy_quants.formats.nvfp4_blocked import BLOCK_SIZE
 from comfy_quants.model_adapters.base import ModelSource
@@ -33,6 +35,13 @@ def register(subparsers):
     parser.add_argument("--source", default=None, help="Local safetensors file, index JSON, or indexed directory")
     parser.add_argument("--out", required=True, help="Output .safetensors path or output directory")
     parser.add_argument("--device", default="auto", help="Torch device for tensor conversion; auto uses cuda:0 when available and falls back to cpu")
+    parser.add_argument(
+        "--convrot",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="EXPERIMENTAL: apply ConvRot (regular-Hadamard) weight rotation before NVFP4 quantization. No released ComfyUI/comfy-kitchen honors the marker keys yet — rotated checkpoints load in today's stock ComfyUI but silently produce WRONG outputs. For runtime bring-up only.",
+    )
+    parser.add_argument("--convrot-groupsize", type=int, default=CONVROT_GROUP_SIZE, help="ConvRot group size (power of four; default 256)")
     parser.add_argument("--hash-output", action="store_true", help="Compute a SHA256 hash after writing the checkpoint")
     parser.add_argument("--no-progress", action="store_true", help="Do not write export progress events to stderr")
     parser.add_argument("--json", action="store_true")
@@ -111,6 +120,8 @@ def run(args) -> int:
         output_checkpoint=checkpoint,
         tensor_index=tensor_index,
         target_dtype=cfg.quant.target_dtype,
+        convrot=args.convrot,
+        convrot_groupsize=args.convrot_groupsize,
         device=args.device,
         strict=True,
         config_source=source,
@@ -137,6 +148,8 @@ def run(args) -> int:
         "copied_tensor_count": report["copied_tensor_count"],
         "output_tensor_count": report["output_tensor_count"],
         "block_size": report["block_size"],
+        "convrot": report["convrot"],
+        "rotated_tensor_count": report["rotated_tensor_count"],
         "output_bytes": report["output_bytes"],
         "output_hash": report["output_hash"],
         "output_hash_state": report["output_hash_state"],

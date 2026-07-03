@@ -60,6 +60,43 @@ the Qwen-Image families):
 There is **no `<layer>.input_scale`** (activations are runtime-dynamic) and bias is
 copied through unquantized.
 
+## ConvRot rotation (EXPERIMENTAL — runtime-pending, default OFF)
+
+`export-model-nvfp4 --convrot` applies the same group-256 **regular-Hadamard ConvRot**
+rotation as the [INT8 tensorwise format](int8_tensorwise.md) (ConvRot paper,
+arXiv 2512.03673) before the NVFP4 quantization, spreading channel outliers so the
+4-bit grid is used more evenly. The recipe mirrors the int8_tensorwise writer
+byte-for-byte where they overlap:
+
+- the Hadamard is built and applied at the **source weight dtype** (`formats/convrot.py`,
+  the same parity-locked rotation core the int8 writers use);
+- the unchanged bit-faithful NVFP4 path then quantizes the **rotated** weight (both
+  scales are computed on the rotated tensor);
+- rotation is gated per layer on `in_features % 256 == 0`; ineligible layers are
+  stored as plain nvfp4 (marker without convrot keys);
+- the marker follows the int8_tensorwise convention — `format` first, convrot keys
+  only when the layer was actually rotated:
+
+```json
+{"format": "nvfp4", "convrot": true, "convrot_groupsize": 256}
+```
+
+With `--no-convrot` (the default) the output is **content-identical** to the
+pre-ConvRot writer: identical tensor bytes (including every `comfy_quant` marker)
+and an identical header-metadata key/value set, with no convrot keys anywhere.
+Whole-file hashes are **not** stable across exports — safetensors serializes
+`__metadata__` in nondeterministic key order — so compare tensors and metadata
+entries, not file checksums.
+
+> ⚠️ **No released runtime honors the nvfp4 convrot keys yet.** Today's stock ComfyUI
+> loader ignores unknown marker keys on the nvfp4 branch, so a rotated checkpoint
+> loads *successfully* and silently produces **wrong outputs** (weights rotated,
+> activations not). Do **not** publish rotated nvfp4 checkpoints until the matching
+> comfy-kitchen online activation rotation + ComfyUI loader support lands. The flag
+> exists to freeze the offline byte contract and to produce artifacts for runtime
+> bring-up. The intended runtime semantics (`y = rot(x) @ rot(W).T == x @ W.T`) are
+> asserted in `tests/unit/test_nvfp4_convrot_export.py`.
+
 ## Loader handshake
 
 ComfyUI's `MixedPrecisionOps` Linear reads the `comfy_quant` marker, dispatches on

@@ -43,6 +43,20 @@ Directory outputs use `diffusion_pytorch_model.nvfp4.safetensors`.
 Requires `quant.target_dtype: nvfp4` in the config. The block size (16), the two-level
 scale, and deterministic E2M1 rounding are fixed by the format.
 
+## ConvRot rotation (EXPERIMENTAL — do not publish, runtime-pending)
+
+`--convrot` (default **off**) rotates every eligible weight with the group-256
+regular-Hadamard ConvRot before quantization, mirroring the
+[int8_tensorwise](int8_tensorwise.md) recipe; `--convrot-groupsize` overrides the
+group size (power of four). Layers whose `in_features` is not divisible by the group
+size stay plain nvfp4. The export report gains `convrot` / `rotated_tensor_count` /
+`nonrotated_tensor_count` fields.
+
+> ⚠️ **No released ComfyUI/comfy-kitchen executes the matching online activation
+> rotation on nvfp4 yet.** A rotated checkpoint loads in today's stock ComfyUI but
+> silently produces **wrong outputs**. Use only for runtime bring-up; see the
+> [format page](../formats/nvfp4.md) for the marker contract.
+
 ## Layer selection
 
 NVFP4 reuses the **FP8 default policy** (it is a native-loader format): the selected
