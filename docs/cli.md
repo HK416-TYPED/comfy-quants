@@ -86,6 +86,29 @@ comfy-quants export-model-int8-tensorwise \
 Requires `quant.target_dtype: int8_tensorwise` in the config. Guide:
 [`quantization/int8_tensorwise.md`](quantization/int8_tensorwise.md).
 
+## INT4 tensorwise commands
+
+Export a W4A4 int4 (+ConvRot) checkpoint with optional per-layer int8 fallback
+(the mixed-precision quality recipe) for the comfy-kitchen `TensorWiseINT4Layout`
+runtime — packed INT4 weights + per-output-channel fp32 scales offline; online
+activation rotation, dynamic INT4 activations, and the int4 matmul run downstream:
+
+```bash
+comfy-quants export-model-int4-tensorwise \
+  --config configs/ltx2_int4_tensorwise_mixed.yaml \
+  --source /path/to/diffusion_pytorch_model.safetensors \
+  --out runs/export-int4-tensorwise \
+  --device cuda:0 \
+  --convrot \
+  --hash-output \
+  --json
+```
+
+Requires `quant.target_dtype: int4_tensorwise` in the config. Layers matching
+`quant.modules.int8_fallback` globs (or repeated `--int8-fallback GLOB` flags)
+are written as int8_tensorwise in the same checkpoint. Guide:
+[`quantization/int4_tensorwise.md`](quantization/int4_tensorwise.md).
+
 ## MXFP8 commands
 
 Export a full MXFP8 (OCP microscaling FP8) checkpoint for **stock ComfyUI's native**

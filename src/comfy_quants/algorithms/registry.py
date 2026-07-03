@@ -4,6 +4,7 @@ from __future__ import annotations
 
 # Import built-in algorithms for registration side effects.
 from comfy_quants.algorithms import fp8_static as _fp8_static_algorithm  # noqa: F401
+from comfy_quants.algorithms import int4_tensorwise as _int4_tensorwise_algorithm  # noqa: F401
 from comfy_quants.algorithms import int8_tensorwise as _int8_tensorwise_algorithm  # noqa: F401
 from comfy_quants.algorithms import int8_w8a8 as _int8_w8a8_algorithm  # noqa: F401
 from comfy_quants.algorithms import mxfp8 as _mxfp8_algorithm  # noqa: F401

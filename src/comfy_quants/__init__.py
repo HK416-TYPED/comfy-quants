@@ -17,6 +17,7 @@ from comfy_quants.backends import int4_full_pipeline_export as _int4_full_pipeli
 from comfy_quants.backends import deepcompressor_import as _deepcompressor_int4_import_backend  # noqa: E402,F401
 from comfy_quants.backends import torch_ref as _torch_ref_backend  # noqa: E402,F401
 from comfy_quants.algorithms import fp8_static as _fp8_static_algorithm  # noqa: E402,F401
+from comfy_quants.algorithms import int4_tensorwise as _int4_tensorwise_algorithm  # noqa: E402,F401
 from comfy_quants.algorithms import int8_tensorwise as _int8_tensorwise_algorithm  # noqa: E402,F401
 from comfy_quants.algorithms import int8_w8a8 as _int8_w8a8_algorithm  # noqa: E402,F401
 from comfy_quants.algorithms import mxfp8 as _mxfp8_algorithm  # noqa: E402,F401
@@ -24,6 +25,7 @@ from comfy_quants.algorithms import nvfp4 as _nvfp4_algorithm  # noqa: E402,F401
 from comfy_quants.formats import awq_w4a16 as _awq_w4a16_format  # noqa: E402,F401
 from comfy_quants.formats import fp8_e4m3 as _fp8_e4m3_format  # noqa: E402,F401
 from comfy_quants.formats import fp8_e5m2 as _fp8_e5m2_format  # noqa: E402,F401
+from comfy_quants.formats import int4_tensorwise as _int4_tensorwise_format  # noqa: E402,F401
 from comfy_quants.formats import int8_tensorwise as _int8_tensorwise_format  # noqa: E402,F401
 from comfy_quants.formats import int8_w8a8 as _int8_w8a8_format  # noqa: E402,F401
 from comfy_quants.formats import mxfp8 as _mxfp8_format  # noqa: E402,F401

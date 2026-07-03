@@ -1,4 +1,4 @@
-# LTX-2 (LTX-2.3) family export (FP8 / MXFP8 / NVFP4 / INT8 W8A8 / INT8 tensorwise)
+# LTX-2 (LTX-2.3) family export (FP8 / MXFP8 / NVFP4 / INT8 W8A8 / INT8 tensorwise / INT4 tensorwise)
 
 Quantize the **LTX-2.3** diffusion model (Lightricks 22B audio-video DiT, ComfyUI
 `image_model="ltxav"`) to the stock-ComfyUI-native formats. This is a separate family
@@ -16,6 +16,7 @@ share a contract, and an LTX-2.0 checkpoint does not match this contract either
 | NVFP4 | `export-model-nvfp4` | `configs/ltx2_nvfp4.yaml` | stock ComfyUI (Blackwell SM≥10) |
 | INT8 W8A8 (+ConvRot) | `export-model-w8a8` | `configs/ltx2_int8_w8a8.yaml` | ComfyUI-INT8-Fast custom node (retired) |
 | INT8 tensorwise (+ConvRot) | `export-model-int8-tensorwise` | `configs/ltx2_int8_tensorwise.yaml` | stock ComfyUI (>= 0.27, SM ≥ 7.5) |
+| [INT4 tensorwise W4A4 mixed](int4_tensorwise.md) (+ConvRot, int8 fallback) | `export-model-int4-tensorwise` | `configs/ltx2_int4_tensorwise_mixed.yaml` | comfy-kitchen TensorWiseINT4Layout (stock loader entry in flight; INT4 tensor cores SM 7.5–8.9) |
 
 ## Architecture
 
@@ -43,7 +44,8 @@ The default policy reproduces the official `Lightricks/LTX-2.3-fp8` / `-nvfp4` r
 **layer-for-layer**: quantize blocks 2–45 and keep blocks 0, 1, 46, 47 in bf16 →
 **1,496** quantized Linears (44 × 34, gate logits included). The four block excludes are
 carried in every `configs/ltx2_*.yaml` under `quant.modules.exclude` (including both
-INT8 configs, so all six formats quantize the same 1,496 layers) — keep them when
+INT8 configs and the INT4 mixed config, so all seven formats quantize the same 1,496
+layers) — keep them when
 deriving new configs, since config include/exclude **overrides** the adapter policy.
 Every ltx2 `in_features` (4096/2048/16384/8192) is divisible by 256, so ConvRot applies
 to all selected layers in the INT8 export.

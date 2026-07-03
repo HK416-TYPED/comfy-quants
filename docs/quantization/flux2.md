@@ -1,4 +1,4 @@
-# FLUX.2 family export (FP8 / MXFP8 / NVFP4, + mixed precision)
+# FLUX.2 family export (FP8 / MXFP8 / NVFP4 / INT8 tensorwise / INT4 tensorwise, + mixed precision)
 
 Quantize the **FLUX.2** diffusion model (Black Forest Labs MMDiT, ComfyUI
 `image_model="flux2"`) to the stock-ComfyUI-native formats. FLUX.2 is a distinct
@@ -12,8 +12,12 @@ architecture from FLUX.1 — see [`flux.md`](flux.md) for the latter.
 | FP8 E5M2 | `export-model` | `configs/flux2_fp8_e5m2.yaml` | — |
 | MXFP8 | `export-model-mxfp8` | `configs/flux2_mxfp8.yaml` | `configs/flux2_mxfp8_mixed.yaml` |
 | NVFP4 | `export-model-nvfp4` | `configs/flux2_nvfp4.yaml` | `configs/flux2_nvfp4_mixed.yaml` |
+| INT8 tensorwise (+ConvRot) | `export-model-int8-tensorwise` | `configs/flux2_int8_tensorwise.yaml` | — |
+| [INT4 tensorwise W4A4](int4_tensorwise.md) (+ConvRot) | `export-model-int4-tensorwise` | — | `configs/flux2_int4_tensorwise_mixed.yaml` (int8 fallback: attn proj + single linear2) |
 
-MXFP8/NVFP4 load on stock ComfyUI (Blackwell SM≥10); FP8 on any GPU.
+MXFP8/NVFP4 load on stock ComfyUI (Blackwell SM≥10); FP8 on any GPU; INT8 tensorwise
+on stock ComfyUI ≥ 0.27 (SM ≥ 7.5); INT4 tensorwise needs the comfy-kitchen
+TensorWiseINT4Layout runtime (stock loader entry in flight; INT4 tensor cores SM 7.5–8.9).
 
 ## Architecture
 

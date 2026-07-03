@@ -11,6 +11,7 @@ model-family flows currently implemented for that format.
 | Export FP8 checkpoints | [`quantization/fp8.md`](quantization/fp8.md) |
 | Export INT8 W8A8 (+ConvRot) checkpoints | [`quantization/int8_w8a8.md`](quantization/int8_w8a8.md) |
 | Export INT8 tensorwise (stock ComfyUI) checkpoints | [`quantization/int8_tensorwise.md`](quantization/int8_tensorwise.md) |
+| Export INT4 tensorwise W4A4 (+mixed int8) checkpoints | [`quantization/int4_tensorwise.md`](quantization/int4_tensorwise.md) |
 | Export MXFP8 (microscaling, Blackwell) checkpoints | [`quantization/mxfp8.md`](quantization/mxfp8.md) |
 | Export NVFP4 (FP4 microscaling, Blackwell) checkpoints | [`quantization/nvfp4.md`](quantization/nvfp4.md) |
 | Quantize the Anima family (FP8/MXFP8/NVFP4) | [`quantization/anima.md`](quantization/anima.md) |
@@ -30,6 +31,7 @@ model-family flows currently implemented for that format.
 | FP8 E4M3 / E5M2 | [`formats/fp8.md`](formats/fp8.md) |
 | INT8 W8A8 (+ConvRot) | [`formats/int8_w8a8.md`](formats/int8_w8a8.md) |
 | INT8 tensorwise (stock ComfyUI, +ConvRot) | [`formats/int8_tensorwise.md`](formats/int8_tensorwise.md) |
+| INT4 tensorwise (W4A4 +ConvRot, mixed-capable) | [`formats/int4_tensorwise.md`](formats/int4_tensorwise.md) |
 | MXFP8 microscaling | [`formats/mxfp8.md`](formats/mxfp8.md) |
 | NVFP4 microscaling | [`formats/nvfp4.md`](formats/nvfp4.md) |
 | SVDQuant W4A4 kitchen tile-pack | [`formats/svdquant_w4a4_kitchen_tilepack.md`](formats/svdquant_w4a4_kitchen_tilepack.md) |

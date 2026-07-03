@@ -1,0 +1,46 @@
+project:
+  name: ltx2-int4-tensorwise-mixed-v0
+  created_by: comfy_quants
+  seed: 42
+model:
+  family: ltx2
+  model_id: Lightricks/LTX-2.3
+  revision: "<pin-this>"
+  dtype: bf16
+  source: huggingface
+  trust_remote_code: false
+  components:
+    transformer: quantize
+    text_encoder: keep_bf16
+    vae: keep_bf16
+quant:
+  algorithm: int4_tensorwise
+  target_dtype: int4_tensorwise
+  scale:
+    granularity: per_channel
+    axis: out_features
+    method: amax
+  rounding: nearest_even
+  modules:
+    include:
+      - "model.diffusion_model.transformer_blocks.*"
+    # Official Lightricks FP8/NVFP4 recipe: keep the first two and last two blocks bf16.
+    # Reused for INT4 so every ltx2 format quantizes the same 1,496 layers.
+    exclude:
+      - "model.diffusion_model.transformer_blocks.0.*"
+      - "model.diffusion_model.transformer_blocks.1.*"
+      - "model.diffusion_model.transformer_blocks.46.*"
+      - "model.diffusion_model.transformer_blocks.47.*"
+    # Mixed-precision quality recipe (ConvRot paper, arXiv 2512.03673 Table 8, FLUX.1):
+    # attention value/output projections are functionally 4-bit-sensitive and stay
+    # W8A8 (int8_tensorwise markers in the same checkpoint). INITIAL mapping for the
+    # LTX-2.3 uniform-block architecture — refine after E2E A/B.
+    int8_fallback:
+      - "model.diffusion_model.transformer_blocks.*.to_v"
+      - "model.diffusion_model.transformer_blocks.*.to_out.0"
+  fallback:
+    on_error: keep_bf16
+artifact:
+  format: safetensors_quant
+  compatibility_target: L2
+  write_module_reports: true

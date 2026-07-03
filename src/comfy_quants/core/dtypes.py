@@ -15,6 +15,7 @@ class QuantDType(str, Enum):
     INT8 = "int8"
     INT8_W8A8 = "int8_w8a8"
     INT8_TENSORWISE = "int8_tensorwise"
+    INT4_TENSORWISE = "int4_tensorwise"
     UINT8 = "uint8"
     INT4 = "int4"
     UINT4 = "uint4"
@@ -59,6 +60,13 @@ KNOWN_DTYPES: dict[str, DTypeSpec] = {
         notes="stock-ComfyUI int8_tensorwise: symmetric INT8 weights, dynamic INT8 activations, optional ConvRot",
     ),
     QuantDType.UINT8.value: DTypeSpec("uint8", 8, "uint8"),
+    # W4A4 scheme id: 4-bit downward extension of int8_tensorwise — symmetric per-row
+    # packed INT4 weights ([-7,7], 2/byte low-nibble-first, int8 container), dynamic
+    # INT4 activations downstream, optional ConvRot. See formats/int4_tensorwise.py.
+    QuantDType.INT4_TENSORWISE.value: DTypeSpec(
+        "int4_tensorwise", 4, "int8", subbyte=True,
+        notes="W4A4 int4_tensorwise: symmetric packed INT4 weights, dynamic INT4 activations, optional ConvRot, per-layer int8 fallback",
+    ),
     QuantDType.INT4.value: DTypeSpec("int4", 4, "uint8", subbyte=True),
     QuantDType.UINT4.value: DTypeSpec("uint4", 4, "uint8", subbyte=True),
     QuantDType.FP4_E2M1.value: DTypeSpec("fp4_e2m1", 4, "uint8", subbyte=True, floating=True),

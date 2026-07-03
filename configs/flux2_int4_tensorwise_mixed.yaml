@@ -1,0 +1,43 @@
+project:
+  name: flux2-int4-tensorwise-mixed-v0
+  created_by: comfy_quants
+  seed: 42
+model:
+  family: flux2
+  model_id: black-forest-labs/FLUX.2-dev
+  revision: "<pin-this>"
+  dtype: bf16
+  source: huggingface
+  trust_remote_code: false
+  components:
+    transformer: quantize
+    text_encoder: keep_bf16
+    vae: keep_bf16
+quant:
+  algorithm: int4_tensorwise
+  target_dtype: int4_tensorwise
+  scale:
+    granularity: per_channel
+    axis: out_features
+    method: amax
+  rounding: nearest_even
+  modules:
+    include:
+      - "double_blocks.*"
+      - "single_blocks.*"
+    exclude: []
+    # Mixed-precision quality recipe (ConvRot paper Table 8 analog). FLUX.1 kept all
+    # double-block attn.to_out.0 and single-block attn.to_v at W8A8; on FLUX.2 the
+    # attention output projection is *_attn.proj, and the single-block to_v is fused
+    # inside linear1 (not separable), so linear2 (output projection) stands in.
+    # INITIAL mapping — refine after E2E A/B (flux2 is attention-sensitive).
+    int8_fallback:
+      - "double_blocks.*.img_attn.proj"
+      - "double_blocks.*.txt_attn.proj"
+      - "single_blocks.*.linear2"
+  fallback:
+    on_error: keep_bf16
+artifact:
+  format: safetensors_quant
+  compatibility_target: L2
+  write_module_reports: true
