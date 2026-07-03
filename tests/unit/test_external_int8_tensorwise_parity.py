@@ -12,6 +12,12 @@ def _torch():
     return torch
 
 
+def _ck_root() -> Path:
+    """comfy-kitchen checkout root (same cwd-anchored convention as the sibling
+    external parity tests)."""
+    return Path(os.environ.get("COMFY_QUANTS_COMFY_KITCHEN_SOURCE", str(Path.cwd().parent / "external" / "comfy-kitchen")))
+
+
 def _load_ck_int8_utils():
     """Load comfy-kitchen's tensor/int8_utils.py as the stock-int8 parity oracle.
 
@@ -20,8 +26,7 @@ def _load_ck_int8_utils():
     SkipTest if the comfy-kitchen source is unavailable or predates int8 support
     (< 0.2.11). Set COMFY_QUANTS_COMFY_KITCHEN_SOURCE to override.
     """
-    root = Path(os.environ.get("COMFY_QUANTS_COMFY_KITCHEN_SOURCE", str(Path.cwd().parent / "external" / "comfy-kitchen")))
-    path = root / "comfy_kitchen" / "tensor" / "int8_utils.py"
+    path = _ck_root() / "comfy_kitchen" / "tensor" / "int8_utils.py"
     if not path.is_file():
         raise unittest.SkipTest(f"comfy-kitchen int8_utils.py oracle is not available at {path} (checkout predates int8 support?)")
     spec = importlib.util.spec_from_file_location("_comfy_quants_ck_int8_utils_oracle", path)
@@ -48,7 +53,7 @@ def _load_ck_rowwise_quant():
     """
     import sys
 
-    root = Path(os.environ.get("COMFY_QUANTS_COMFY_KITCHEN_SOURCE", str(Path.cwd().parent / "external" / "comfy-kitchen")))
+    root = _ck_root()
     if not (root / "comfy_kitchen" / "backends" / "eager" / "quantization.py").is_file():
         return None
     sys.path.insert(0, str(root))

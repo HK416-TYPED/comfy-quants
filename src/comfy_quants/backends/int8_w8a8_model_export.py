@@ -29,7 +29,9 @@ from comfy_quants.backends.inference_model_export import (
     _metadata_value,
     _require_safetensors,
     _require_torch,
-    _requires_index_timestep_zero_marker,
+    _collect_header_metadata,
+    _maybe_add_index_timestep_zero,
+    _merged_output_metadata,
     _resolve_model_config_path,
     _resolve_torch_device,
     _shape_list,
@@ -218,8 +220,7 @@ def write_int8_w8a8_inference_checkpoint_from_safetensors(
             tensor_count=len(tensor_names),
         )
         with safe_open(str(source_file), framework="pt", device="cpu") as handle:
-            for key, value in (handle.metadata() or {}).items():
-                source_header_metadata.setdefault(str(key), str(value))
+            _collect_header_metadata(handle, source_header_metadata)
             available = set(handle.keys())
             for tensor_name in tensor_names:
                 if tensor_name not in available:
@@ -272,16 +273,11 @@ def write_int8_w8a8_inference_checkpoint_from_safetensors(
                 if execution_device_obj.type == "cuda":
                     del tensor_for_quant
 
-    if _requires_index_timestep_zero_marker(tensor_index, metadata) and "__index_timestep_zero__" not in output_tensors:
-        output_tensors["__index_timestep_zero__"] = torch.empty((0,), dtype=torch.float32, device="cpu")
-        dtype_counts["float32"] = dtype_counts.get("float32", 0) + 1
+    _maybe_add_index_timestep_zero(output_tensors, dtype_counts, tensor_index, metadata)
 
-    # Preserve the source header metadata: stock ComfyUI reads architecture/VAE
-    # configs from __metadata__["config"] (required for e.g. LTX-2); caller and
-    # artifact bookkeeping keys win on collision.
-    output_metadata = dict(source_header_metadata)
-    output_metadata.update(metadata or {})
-    output_metadata.update(
+    output_metadata = _merged_output_metadata(
+        source_header_metadata,
+        metadata,
         {
             "artifact_target": "comfyui_diffusion_model",
             "artifact_contract": "qwen_image_int8_w8a8_inference_checkpoint.v1",
@@ -292,7 +288,7 @@ def write_int8_w8a8_inference_checkpoint_from_safetensors(
             "convrot": bool(convrot),
             "convrot_groupsize": int(convrot_groupsize),
             "quantized_tensor_count": quantized,
-        }
+        },
     )
     if execution_device_obj.type == "cuda":
         torch.cuda.synchronize(execution_device_obj)

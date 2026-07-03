@@ -20,11 +20,6 @@ hardware:
   cpu_offload: true
   nvme_offload: false
   scratch_dir: runs/qwen-image-layered/scratch
-calibration:
-  source: runs/qwen-image-layered/calib-v0
-  batch_size: 1
-  capture_dtype: bf16
-  activation_cache: runs/qwen-image-layered/cache/calib-v0
 quant:
   algorithm: int8_tensorwise
   target_dtype: int8_tensorwise

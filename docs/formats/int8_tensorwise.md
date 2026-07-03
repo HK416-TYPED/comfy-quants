@@ -50,7 +50,10 @@ Enforced by `tests/unit/test_external_int8_tensorwise_parity.py` against the
 comfy-kitchen source (`COMFY_QUANTS_COMFY_KITCHEN_SOURCE`): the Hadamard/rotation
 helpers and — when the checkout is importable as a package — the real eager
 `quantize_int8_rowwise` are loaded from the checkout (requires >= 0.2.15 for the
-division recipe; falls back to a pinned inline oracle otherwise).
+division recipe; falls back to a pinned inline oracle otherwise). The bit-exact
+claim covers the offline quantization math only — it is not an end-to-end runtime
+guarantee (ComfyUI-side re-quantization behavior depends on the comfy-kitchen
+version ComfyUI pins; see the torch/kitchen version notes above).
 
 ## Layer side tensors
 
