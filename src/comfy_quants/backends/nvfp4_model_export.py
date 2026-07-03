@@ -34,6 +34,7 @@ from comfy_quants.backends.inference_model_export import (
     _metadata_value,
     _require_safetensors,
     _require_torch,
+    _requires_index_timestep_zero_marker,
     _resolve_model_config_path,
     _resolve_torch_device,
     _shape_list,
@@ -182,6 +183,7 @@ def write_nvfp4_inference_checkpoint_from_safetensors(
         selected_tensor_count=len(selected_names),
         block_size=BLOCK_SIZE,
     )
+    source_header_metadata: dict[str, str] = {}
     for source_file_index, (source_file, tensor_names) in enumerate(source_files, start=1):
         if not source_file.is_file():
             raise PayloadWriteError(f"source tensor file is missing: {source_file}")
@@ -194,6 +196,8 @@ def write_nvfp4_inference_checkpoint_from_safetensors(
             tensor_count=len(tensor_names),
         )
         with safe_open(str(source_file), framework="pt", device="cpu") as handle:
+            for key, value in (handle.metadata() or {}).items():
+                source_header_metadata.setdefault(str(key), str(value))
             available = set(handle.keys())
             for tensor_name in tensor_names:
                 if tensor_name not in available:
@@ -239,7 +243,15 @@ def write_nvfp4_inference_checkpoint_from_safetensors(
                 if execution_device_obj.type == "cuda":
                     del tensor_for_quant
 
-    output_metadata = dict(metadata or {})
+    if _requires_index_timestep_zero_marker(tensor_index, metadata) and "__index_timestep_zero__" not in output_tensors:
+        output_tensors["__index_timestep_zero__"] = torch.empty((0,), dtype=torch.float32, device="cpu")
+        dtype_counts["float32"] = dtype_counts.get("float32", 0) + 1
+
+    # Preserve the source header metadata: stock ComfyUI reads architecture/VAE
+    # configs from __metadata__["config"] (required for e.g. LTX-2); caller and
+    # artifact bookkeeping keys win on collision.
+    output_metadata = dict(source_header_metadata)
+    output_metadata.update(metadata or {})
     output_metadata.update(
         {
             "artifact_target": "comfyui_diffusion_model",
