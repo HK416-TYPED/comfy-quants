@@ -57,12 +57,15 @@ class TestInt4TensorwiseSelection(unittest.TestCase):
         self.assertEqual(len(modules), 1496)
         self.assertEqual(idx["format"]["name"], "int4_tensorwise")
         self.assertEqual(idx["format"]["storage_dtype"], "int8")
-        # Paper-shaped fallback: every attention to_v / to_out.0 goes int8 (528 of 1496).
+        # Paper-shaped fallback (to_v / to_out.0) plus the modulation-class gate
+        # projections (qwen L4 E2E finding: modulation must never be int4):
+        # (12 + 6) x 44 blocks = 792 of 1496.
         fallback = cfg.quant.modules["int8_fallback"]
         hits = _fallback_hits(modules, fallback)
-        self.assertEqual(len(hits), 528)
+        self.assertEqual(len(hits), 792)
         self.assertIn("model.diffusion_model.transformer_blocks.2.attn1.to_v", hits)
         self.assertIn("model.diffusion_model.transformer_blocks.45.audio_attn2.to_out.0", hits)
+        self.assertIn("model.diffusion_model.transformer_blocks.2.attn1.to_gate_logits", hits)
         # Fallback layers must be a strict subset of the selected set.
         self.assertTrue(set(hits) <= set(modules))
         self.assertLess(len(hits), len(modules))
@@ -80,6 +83,21 @@ class TestInt4TensorwiseSelection(unittest.TestCase):
         self.assertTrue(set(hits) <= set(modules))
         for row in idx["tensors"]:
             self.assertEqual(row["shape"][1] % 256, 0, row["name"])
+
+    def test_qwen_edit_mixed_config(self):
+        # Recipe validated E2E on L4 (2026-07-03): 480 int4 + 359 int8 fallback,
+        # 21.67 dB vs bf16-sentinel (int8_tensorwise baseline: 23.93 dB).
+        cfg = load_quant_config(_CONFIG_DIR / "qwen_image_edit_2511_int4_tensorwise_mixed.yaml")
+        self.assertEqual(cfg.model.family, "qwen_image_edit")
+        self.assertEqual(cfg.quant.target_dtype, "int4_tensorwise")
+        idx, modules = _selected_modules("qwen_image_edit", cfg.quant.modules["include"], cfg.quant.modules["exclude"])
+        self.assertEqual(len(modules), 839)
+        hits = _fallback_hits(modules, cfg.quant.modules["int8_fallback"])
+        self.assertEqual(len(hits), 359)
+        # The adaLN modulation Linears MUST be in the fallback set.
+        self.assertIn("transformer_blocks.1.img_mod.1", hits)
+        self.assertIn("transformer_blocks.0.txt_mod.1", hits)
+        self.assertTrue(set(hits) <= set(modules))
 
     def test_selection_matches_int8_tensorwise_membership(self):
         # int4 and int8 tensorwise share the family selection: same include/exclude

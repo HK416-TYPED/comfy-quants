@@ -1,0 +1,72 @@
+# Mixed W4A4 recipe validated E2E on L4 (2026-07-03, 20-step edit sample, PSNR vs
+# bf16-sentinel baseline): this list scores 21.67 dB at 14.89 GB (int8_tensorwise:
+# 23.93 dB / 20 GB; bf16: 40 GB). CRITICAL: the adaLN modulation Linears
+# (img_mod.1/txt_mod.1) MUST be in int8_fallback — with them at int4 the output
+# shows global saturation shift + grain (9.27 dB). Attention value/output
+# projections follow the ConvRot paper's sensitivity finding. Promoting the MLP
+# down-projections (*.img_mlp.net.2 / *.txt_mlp.net.2) too measured 22.89 dB at
+# 17.16 GB — use that variant when quality matters more than size.
+project:
+  name: qwen-image-edit-2511-int4-tensorwise-mixed-v0
+  created_by: comfy_quants
+  seed: 42
+model:
+  family: qwen_image_edit
+  model_id: Qwen/Qwen-Image-Edit-2511
+  revision: <pin-this>
+  dtype: bf16
+  source: huggingface
+  components:
+    transformer: quantize
+    visual_semantic_path: keep_bf16
+    vae: keep_bf16
+    text_encoder: keep_bf16
+hardware:
+  device: cuda:0
+  gpu_profile: rtx_pro_6000_blackwell_96gb
+  max_vram_gb: 88
+  cpu_offload: true
+  nvme_offload: false
+  scratch_dir: runs/qwen-edit-2511/scratch
+quant:
+  algorithm: int4_tensorwise
+  target_dtype: int4_tensorwise
+  scale:
+    granularity: per_channel
+    axis: out_features
+    method: amax
+  rounding: nearest_even
+  modules:
+    include:
+    - transformer_blocks.*.attn.to_*
+    - transformer_blocks.*.attn.add_*_proj
+    - transformer_blocks.*.img_mlp.*
+    - transformer_blocks.*.txt_mlp.*
+    - transformer_blocks.*.img_mod.1
+    - transformer_blocks.*.txt_mod.1
+    exclude:
+    - transformer_blocks.0.img_mod.1
+    - '*.norm*'
+    - '*txt_norm*'
+    - '*norm_out*'
+    - '*proj_out*'
+    - '*vae*'
+    - '*text_encoder*'
+    - '*visual_semantic_path*'
+    int8_fallback:
+    - transformer_blocks.*.attn.to_out.0
+    - transformer_blocks.*.attn.to_v
+    - transformer_blocks.*.attn.add_v_proj
+    - transformer_blocks.*.attn.to_add_out
+    - transformer_blocks.*.img_mod.1
+    - transformer_blocks.*.txt_mod.1
+  fallback:
+    on_error: keep_bf16
+validation:
+  smoke_edit_set: examples/edit_cases.jsonl
+  require_text_edit_cases: true
+  require_appearance_preserve_cases: true
+artifact:
+  format: safetensors_quant
+  compatibility_target: L2
+  write_module_reports: true

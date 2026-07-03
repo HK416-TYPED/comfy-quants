@@ -12,10 +12,35 @@ same rollout sequence as int8_tensorwise. Native INT4 tensor-core speedup on
 
 ## Supported model-family configs (v1)
 
-| Model family | Config | int8 fallback (initial recipe) |
+| Model family | Config | int8 fallback |
 | --- | --- | --- |
-| LTX-2.3 | `configs/ltx2_int4_tensorwise_mixed.yaml` | all attention `to_v` / `to_out.0` (528 of 1,496 layers) |
+| Qwen-Image-Edit-2511 | `configs/qwen_image_edit_2511_int4_tensorwise_mixed.yaml` | attn value/output proj + **adaLN modulation** (359 of 839) — **E2E-validated** |
+| LTX-2.3 | `configs/ltx2_int4_tensorwise_mixed.yaml` | all attention `to_v` / `to_out.0` + gate projections (792 of 1,496) |
 | FLUX.2 | `configs/flux2_int4_tensorwise_mixed.yaml` | `*_attn.proj` + `single_blocks.*.linear2` (64 of 160) |
+
+## Measured results (L4 / SM 8.9, qwen-edit-2511, 20-step edit sample, PSNR vs bf16-sentinel)
+
+All three checkpoints ran the same eager comfy-kitchen build on the same GPU
+(quality comparison; speed needs the CUDA kernel):
+
+| Checkpoint | Layers (int4/int8) | Size | PSNR |
+| --- | --- | --- | --- |
+| int8_tensorwise (baseline) | 0 / 839 | 20.0 GB | 23.93 dB |
+| int4 mixed **+ MLP down-proj at int8** | 360 / 479 | 17.2 GB | 22.89 dB |
+| int4 mixed (shipped config) | 480 / 359 | 14.9 GB | 21.67 dB |
+| int4, paper-style list only (**no modulation fallback**) | 599 / 240 | 11.5 GB | **9.27 dB** ❌ |
+
+Single-image PSNR in the 20–24 dB regime carries ±2 dB trajectory noise (a
+strictly-more-precise variant measured 19.98 dB with a visually clean output) —
+treat the ladder as size/quality guidance, not a strict ordering.
+
+**⚠️ adaLN modulation layers must never be int4.** With qwen's `img_mod.1` /
+`txt_mod.1` at int4 the output shows global saturation drift + grain (the
+9.27 dB row) even though every attention value/output projection was already at
+int8; promoting the modulation Linears alone recovered +12.4 dB. Families whose
+modulation lives outside the block include-globs (FLUX.2, LTX-2's adaln_single)
+keep it bf16 automatically; LTX-2's in-block gate projections are
+modulation-class and sit in the fallback list.
 
 ## Quick start: LTX-2.3
 

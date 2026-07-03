@@ -78,8 +78,11 @@ SVDQuant quality (FID 10.03 vs 10.01). The exporter therefore accepts
 is imported from that writer, guaranteeing byte-identity) in the same
 checkpoint. ComfyUI resolves `QUANT_ALGOS` per layer from each `comfy_quant`
 marker, so the two formats coexist natively. The shipped family configs carry
-paper-shaped initial fallback lists (attention value/output projections) —
-refine per model after E2E A/B.
+fallback lists validated/derived from the L4 E2E sweep — **adaLN modulation
+Linears must always be in the fallback set** (at int4 they cause global
+saturation drift: 9.27 dB vs 21.67 dB on qwen-edit-2511), followed by the
+paper's attention value/output projections. See the workflow page for measured
+numbers.
 
 ## Compute path (context)
 

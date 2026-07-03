@@ -38,6 +38,11 @@ quant:
     int8_fallback:
       - "model.diffusion_model.transformer_blocks.*.to_v"
       - "model.diffusion_model.transformer_blocks.*.to_out.0"
+      # Modulation-class layers must not be int4: the qwen L4 E2E showed adaLN
+      # modulation at int4 causes global saturation drift (9.3 dB vs 21.7 dB with
+      # them at int8). LTX-2's in-block modulation analog is the attention gate
+      # projection ([32, K], near-zero size cost at int8).
+      - "model.diffusion_model.transformer_blocks.*.to_gate_logits"
   fallback:
     on_error: keep_bf16
 artifact:

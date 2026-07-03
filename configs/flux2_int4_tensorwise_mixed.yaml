@@ -31,6 +31,9 @@ quant:
     # attention output projection is *_attn.proj, and the single-block to_v is fused
     # inside linear1 (not separable), so linear2 (output projection) stands in.
     # INITIAL mapping — refine after E2E A/B (flux2 is attention-sensitive).
+    # Note: FLUX.2's modulation Linears (double_stream_modulation_*/single_stream_
+    # modulation) live OUTSIDE the include globs and stay bf16 — the qwen E2E showed
+    # modulation must never be int4.
     int8_fallback:
       - "double_blocks.*.img_attn.proj"
       - "double_blocks.*.txt_attn.proj"
