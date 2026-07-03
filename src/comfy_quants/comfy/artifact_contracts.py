@@ -101,6 +101,16 @@ _STOCK_DIT_CONTRACTS: dict[str, dict[str, Any]] = {
         "model_contract_schema": "ltxv_static_contract.v1",
         "owner_module": "comfy_quants.model_adapters.ltxv",
     },
+    "ltx2": {
+        "schema_version": "ltx2_contract.v1",
+        "family": "ltx2",
+        "artifact_target": "comfyui",
+        "export_name": "LTX-2",
+        # ComfyUI detects LTX-2.x as image_model="ltxav"; the family key "ltx2" is comfy-quants-local.
+        "consumer_layout": "ComfyUI ltxav",
+        "model_contract_schema": "ltx2_static_contract.v1",
+        "owner_module": "comfy_quants.model_adapters.ltx2",
+    },
     "ideogram4": {
         "schema_version": "ideogram4_contract.v1",
         "family": "ideogram4",

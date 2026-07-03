@@ -10,12 +10,14 @@ model-family flows currently implemented for that format.
 | Choose a quantization format | [`quantization/README.md`](quantization/README.md) |
 | Export FP8 checkpoints | [`quantization/fp8.md`](quantization/fp8.md) |
 | Export INT8 W8A8 (+ConvRot) checkpoints | [`quantization/int8_w8a8.md`](quantization/int8_w8a8.md) |
+| Export INT8 tensorwise (stock ComfyUI) checkpoints | [`quantization/int8_tensorwise.md`](quantization/int8_tensorwise.md) |
 | Export MXFP8 (microscaling, Blackwell) checkpoints | [`quantization/mxfp8.md`](quantization/mxfp8.md) |
 | Export NVFP4 (FP4 microscaling, Blackwell) checkpoints | [`quantization/nvfp4.md`](quantization/nvfp4.md) |
 | Quantize the Anima family (FP8/MXFP8/NVFP4) | [`quantization/anima.md`](quantization/anima.md) |
 | Quantize the FLUX.1 family (FP8/MXFP8/NVFP4) | [`quantization/flux.md`](quantization/flux.md) |
 | Quantize the FLUX.2 family (FP8/MXFP8/NVFP4, + mixed) | [`quantization/flux2.md`](quantization/flux2.md) |
 | Quantize the LTX-Video family (FP8/MXFP8/NVFP4) | [`quantization/ltxv.md`](quantization/ltxv.md) |
+| Quantize the LTX-2 (2.3) family (FP8/MXFP8/NVFP4/INT8) | [`quantization/ltx2.md`](quantization/ltx2.md) |
 | Quantize the Ideogram 4.0 family (FP8/MXFP8/NVFP4, + transcode) | [`quantization/ideogram4.md`](quantization/ideogram4.md) |
 | Export INT4 tile-pack checkpoints | [`quantization/int4.md`](quantization/int4.md) |
 | Look up command syntax | [`cli.md`](cli.md) |
@@ -27,6 +29,7 @@ model-family flows currently implemented for that format.
 | --- | --- |
 | FP8 E4M3 / E5M2 | [`formats/fp8.md`](formats/fp8.md) |
 | INT8 W8A8 (+ConvRot) | [`formats/int8_w8a8.md`](formats/int8_w8a8.md) |
+| INT8 tensorwise (stock ComfyUI, +ConvRot) | [`formats/int8_tensorwise.md`](formats/int8_tensorwise.md) |
 | MXFP8 microscaling | [`formats/mxfp8.md`](formats/mxfp8.md) |
 | NVFP4 microscaling | [`formats/nvfp4.md`](formats/nvfp4.md) |
 | SVDQuant W4A4 kitchen tile-pack | [`formats/svdquant_w4a4_kitchen_tilepack.md`](formats/svdquant_w4a4_kitchen_tilepack.md) |

@@ -16,6 +16,7 @@ quantization, and online activation rotation all live in the downstream node.
 | Qwen-Image | `configs/qwen_image_2512_int8_w8a8.yaml` |
 | Qwen-Image-Edit-2511 | `configs/qwen_image_edit_2511_int8_w8a8.yaml` |
 | Qwen-Image-Layered | `configs/qwen_image_layered_int8_w8a8.yaml` |
+| LTX-2 (2.3) | `configs/ltx2_int8_w8a8.yaml` (see [`ltx2.md`](ltx2.md)) |
 
 ## Quick start: Qwen-Image-Layered
 

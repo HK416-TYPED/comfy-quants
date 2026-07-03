@@ -8,9 +8,9 @@ LTXV-2B (0.9.x): inner_dim=2048, 32 heads, head_dim=64, 28 blocks, cross_attenti
 target (fp8_e4m3/fp8_e5m2/mxfp8/nvfp4).
 
 Default policy quantizes every block Linear and keeps the patch / adaln / caption /
-output projections and the ``scale_shift_table`` parameters high precision. The audio
-variant (``ltxav``: 48 layers, inner_dim 4096) is a separate larger architecture and is
-out of scope here.
+output projections and the ``scale_shift_table`` parameters high precision. The audio-video
+variant (``ltxav``: 48 layers, inner_dim 4096) is a separate larger architecture covered
+by the ``ltx2`` adapter (``model_adapters/ltx2.py``).
 """
 
 from __future__ import annotations

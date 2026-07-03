@@ -1,4 +1,4 @@
-"""Artifact contract metadata for stock-ComfyUI DiT exports (flux / ltxv / ideogram4)."""
+"""Artifact contract metadata for stock-ComfyUI DiT exports (flux, flux2, ltxv, ltx2, ideogram4, ...)."""
 
 from __future__ import annotations
 

@@ -1,6 +1,7 @@
 """Generic static contract + graph builder for stock-ComfyUI-native DiT families.
 
-Shared by the ``flux`` / ``ltxv`` / ``ideogram4`` adapters. Like the per-family
+Shared by the stock-ComfyUI DiT family adapters (flux, flux2, ltxv, ltx2,
+ideogram4, ...). Like the per-family
 qwen / anima builders it consumes declarative :class:`ModuleContract` /
 :class:`TensorContract` primitives (reused from ``qwen_contracts.types``) and a free
 ``dims`` dict, but it additionally supports **multiple repeated block groups** (FLUX
