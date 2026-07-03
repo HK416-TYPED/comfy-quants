@@ -46,7 +46,7 @@ INT8_W8A8_FORMAT = QuantFormatSpec(
     category="integer_weight_activation",
     scale_required=True,
     default_scale_granularity="per_channel",  # per output channel (axis = out_features)
-    compatible_families=("qwen_image", "qwen_image_edit", "qwen_image_layered"),
+    compatible_families=("qwen_image", "qwen_image_edit", "qwen_image_layered", "ltx2"),
     notes=(
         "INT8 W8A8: symmetric per-row int8 weights + dynamic int8 activations (runtime).",
         "Optional offline ConvRot (regular Hadamard) weight rotation; group size 256.",

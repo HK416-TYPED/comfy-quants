@@ -9,7 +9,8 @@ model-family flows for that format. Tensor/storage definitions live under
 | Output format | Workflow guide | Format reference | Model-family flows |
 | --- | --- | --- | --- |
 | FP8 E4M3 / E5M2 checkpoint | [`fp8.md`](fp8.md) | [`../formats/fp8.md`](../formats/fp8.md) | listed in the FP8 guide |
-| INT8 W8A8 (+ConvRot) checkpoint | [`int8_w8a8.md`](int8_w8a8.md) | [`../formats/int8_w8a8.md`](../formats/int8_w8a8.md) | listed in the INT8 W8A8 guide (ComfyUI-INT8-Fast) |
+| INT8 W8A8 (+ConvRot) checkpoint | [`int8_w8a8.md`](int8_w8a8.md) | [`../formats/int8_w8a8.md`](../formats/int8_w8a8.md) | listed in the INT8 W8A8 guide (ComfyUI-INT8-Fast, retired) |
+| INT8 tensorwise checkpoint | [`int8_tensorwise.md`](int8_tensorwise.md) | [`../formats/int8_tensorwise.md`](../formats/int8_tensorwise.md) | listed in the INT8 tensorwise guide (stock ComfyUI >= 0.27, SM >= 7.5) |
 | MXFP8 microscaling checkpoint | [`mxfp8.md`](mxfp8.md) | [`../formats/mxfp8.md`](../formats/mxfp8.md) | listed in the MXFP8 guide (stock ComfyUI, Blackwell) |
 | NVFP4 microscaling checkpoint | [`nvfp4.md`](nvfp4.md) | [`../formats/nvfp4.md`](../formats/nvfp4.md) | listed in the NVFP4 guide (stock ComfyUI, Blackwell) |
 | INT4 SVDQuant W4A4 tile-pack | [`int4.md`](int4.md) | [`../formats/svdquant_w4a4_kitchen_tilepack.md`](../formats/svdquant_w4a4_kitchen_tilepack.md) | listed in the INT4 guide |
@@ -93,6 +94,16 @@ Format guides above are family-agnostic. For per-family flows beyond Qwen-Image,
 
 - **Anima** (cosmos_predict2 DiT + llm_adapter) — FP8 / MXFP8 / NVFP4:
   [`anima.md`](anima.md).
+- **FLUX.1** (MMDiT, double + single blocks) — FP8 / MXFP8 / NVFP4:
+  [`flux.md`](flux.md).
+- **FLUX.2** (MMDiT, gated MLP + global modulation; mixed-precision recipe) — FP8 / MXFP8 / NVFP4:
+  [`flux2.md`](flux2.md).
+- **LTX-Video** (Lightricks video DiT; `model.diffusion_model.` prefix) — FP8 / MXFP8 / NVFP4:
+  [`ltxv.md`](ltxv.md).
+- **LTX-2 / LTX-2.3** (Lightricks 22B audio-video DiT; official first/last-two-block
+  keep recipe) — FP8 / MXFP8 / NVFP4 / INT8 W8A8 / INT8 tensorwise: [`ltx2.md`](ltx2.md).
+- **Ideogram 4.0** (open-weight NextDiT/Lumina2; fp8→bf16→mxfp8 transcoding) — FP8 / MXFP8 / NVFP4:
+  [`ideogram4.md`](ideogram4.md).
 
 ## INT4
 

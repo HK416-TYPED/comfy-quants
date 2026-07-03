@@ -35,6 +35,9 @@ from comfy_quants.backends.inference_model_export import (
     _metadata_value,
     _require_safetensors,
     _require_torch,
+    _collect_header_metadata,
+    _maybe_add_index_timestep_zero,
+    _merged_output_metadata,
     _resolve_model_config_path,
     _resolve_torch_device,
     _shape_list,
@@ -181,6 +184,7 @@ def write_mxfp8_inference_checkpoint_from_safetensors(
         selected_tensor_count=len(selected_names),
         block_size=BLOCK_SIZE,
     )
+    source_header_metadata: dict[str, str] = {}
     for source_file_index, (source_file, tensor_names) in enumerate(source_files, start=1):
         if not source_file.is_file():
             raise PayloadWriteError(f"source tensor file is missing: {source_file}")
@@ -193,6 +197,7 @@ def write_mxfp8_inference_checkpoint_from_safetensors(
             tensor_count=len(tensor_names),
         )
         with safe_open(str(source_file), framework="pt", device="cpu") as handle:
+            _collect_header_metadata(handle, source_header_metadata)
             available = set(handle.keys())
             for tensor_name in tensor_names:
                 if tensor_name not in available:
@@ -236,8 +241,11 @@ def write_mxfp8_inference_checkpoint_from_safetensors(
                 if execution_device_obj.type == "cuda":
                     del tensor_for_quant
 
-    output_metadata = dict(metadata or {})
-    output_metadata.update(
+    _maybe_add_index_timestep_zero(output_tensors, dtype_counts, tensor_index, metadata)
+
+    output_metadata = _merged_output_metadata(
+        source_header_metadata,
+        metadata,
         {
             "artifact_target": "comfyui_diffusion_model",
             "artifact_contract": "qwen_image_mxfp8_inference_checkpoint.v1",
@@ -247,7 +255,7 @@ def write_mxfp8_inference_checkpoint_from_safetensors(
             "scale_granularity": "block",
             "block_size": BLOCK_SIZE,
             "quantized_tensor_count": quantized,
-        }
+        },
     )
     if execution_device_obj.type == "cuda":
         torch.cuda.synchronize(execution_device_obj)

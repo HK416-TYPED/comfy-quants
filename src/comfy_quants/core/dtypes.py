@@ -14,6 +14,7 @@ class QuantDType(str, Enum):
     FP8_E5M2 = "fp8_e5m2"
     INT8 = "int8"
     INT8_W8A8 = "int8_w8a8"
+    INT8_TENSORWISE = "int8_tensorwise"
     UINT8 = "uint8"
     INT4 = "int4"
     UINT4 = "uint4"
@@ -49,6 +50,13 @@ KNOWN_DTYPES: dict[str, DTypeSpec] = {
     QuantDType.INT8_W8A8.value: DTypeSpec(
         "int8_w8a8", 8, "int8",
         notes="symmetric per-row INT8 weights, dynamic INT8 activations (W8A8), optional ConvRot weight rotation",
+    ),
+    # Stock-ComfyUI scheme id (exact QUANT_ALGOS key): same int8 + per-row fp32 scale
+    # + optional ConvRot storage as int8_w8a8, but the comfy_quant marker carries a
+    # "format" key. See formats/int8_tensorwise.py.
+    QuantDType.INT8_TENSORWISE.value: DTypeSpec(
+        "int8_tensorwise", 8, "int8",
+        notes="stock-ComfyUI int8_tensorwise: symmetric INT8 weights, dynamic INT8 activations, optional ConvRot",
     ),
     QuantDType.UINT8.value: DTypeSpec("uint8", 8, "uint8"),
     QuantDType.INT4.value: DTypeSpec("int4", 4, "uint8", subbyte=True),

@@ -11,6 +11,7 @@ from comfy_quants.cli import (
     commands_export,
     commands_export_int4,
     commands_export_model,
+    commands_export_model_int8_tensorwise,
     commands_export_model_mxfp8,
     commands_export_model_nvfp4,
     commands_export_model_w8a8,
@@ -78,6 +79,7 @@ def build_parser() -> argparse.ArgumentParser:
     commands_export_int4.register(subparsers)
     commands_export_model.register(subparsers)
     commands_export_model_w8a8.register(subparsers)
+    commands_export_model_int8_tensorwise.register(subparsers)
     commands_export_model_mxfp8.register(subparsers)
     commands_export_model_nvfp4.register(subparsers)
     commands_jobs.register_jobs(subparsers)

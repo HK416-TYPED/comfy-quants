@@ -233,6 +233,38 @@ def _requires_index_timestep_zero_marker(tensor_index: dict[str, Any], metadata:
     return False
 
 
+def _collect_header_metadata(handle: Any, sink: dict[str, str]) -> None:
+    """Accumulate a source file's safetensors header metadata (first file wins per key)."""
+    for key, value in (handle.metadata() or {}).items():
+        sink.setdefault(str(key), str(value))
+
+
+def _maybe_add_index_timestep_zero(
+    output_tensors: dict[str, Any],
+    dtype_counts: dict[str, int],
+    tensor_index: dict[str, Any],
+    metadata: dict[str, Any] | None,
+) -> None:
+    """Emit the qwen-2511 reference-conditioning sentinel when the export needs it."""
+    torch = _require_torch()
+    if _requires_index_timestep_zero_marker(tensor_index, metadata) and "__index_timestep_zero__" not in output_tensors:
+        output_tensors["__index_timestep_zero__"] = torch.empty((0,), dtype=torch.float32, device="cpu")
+        dtype_counts["float32"] = dtype_counts.get("float32", 0) + 1
+
+
+def _merged_output_metadata(
+    source_header_metadata: dict[str, str],
+    metadata: dict[str, Any] | None,
+    artifact_fields: dict[str, Any],
+) -> dict[str, Any]:
+    """Source header metadata first (stock ComfyUI reads e.g. __metadata__["config"]),
+    then caller metadata, then artifact bookkeeping keys — later layers win."""
+    merged: dict[str, Any] = dict(source_header_metadata)
+    merged.update(metadata or {})
+    merged.update(artifact_fields)
+    return merged
+
+
 def _emit_progress(progress: Callable[[dict[str, Any]], None] | None, **event: Any) -> None:
     if progress is not None:
         progress(event)
@@ -299,6 +331,7 @@ def write_fp8_inference_checkpoint_from_safetensors(
         source_file_count=len(source_files),
         selected_tensor_count=len(selected_names),
     )
+    source_header_metadata: dict[str, str] = {}
     for source_file_index, (source_file, tensor_names) in enumerate(source_files, start=1):
         if not source_file.is_file():
             raise PayloadWriteError(f"source tensor file is missing: {source_file}")
@@ -311,6 +344,7 @@ def write_fp8_inference_checkpoint_from_safetensors(
             tensor_count=len(tensor_names),
         )
         with safe_open(str(source_file), framework="pt", device="cpu") as handle:
+            _collect_header_metadata(handle, source_header_metadata)
             available = set(handle.keys())
             for tensor_name in tensor_names:
                 if tensor_name not in available:
@@ -362,12 +396,10 @@ def write_fp8_inference_checkpoint_from_safetensors(
                 if execution_device_obj.type == "cuda":
                     del tensor_for_quant
 
-    if _requires_index_timestep_zero_marker(tensor_index, metadata) and "__index_timestep_zero__" not in output_tensors:
-        output_tensors["__index_timestep_zero__"] = torch.empty((0,), dtype=torch.float32, device="cpu")
-        dtype_counts["float32"] = dtype_counts.get("float32", 0) + 1
-
-    output_metadata = dict(metadata or {})
-    output_metadata.update(
+    _maybe_add_index_timestep_zero(output_tensors, dtype_counts, tensor_index, metadata)
+    output_metadata = _merged_output_metadata(
+        source_header_metadata,
+        metadata,
         {
             "artifact_target": "comfyui_diffusion_model",
             "artifact_contract": fp8_inference_artifact_contract(resolved_target_dtype),
@@ -375,7 +407,7 @@ def write_fp8_inference_checkpoint_from_safetensors(
             "quant_storage_dtype": spec.torch_dtype_name,
             "scale_granularity": scale_granularity,
             "quantized_tensor_count": quantized,
-        }
+        },
     )
     if execution_device_obj.type == "cuda":
         torch.cuda.synchronize(execution_device_obj)

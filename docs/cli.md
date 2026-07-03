@@ -67,6 +67,25 @@ comfy-quants export-model-w8a8 \
 Requires `quant.target_dtype: int8_w8a8` in the config. Use `--no-convrot` for plain
 row-wise W8A8. Guide: [`quantization/int8_w8a8.md`](quantization/int8_w8a8.md).
 
+## INT8 tensorwise commands
+
+Export a full stock-ComfyUI-native INT8 (+ optional ConvRot) checkpoint
+(`QUANT_ALGOS["int8_tensorwise"]`, ComfyUI >= v0.27.0, SM >= 7.5 — no custom node):
+
+```bash
+comfy-quants export-model-int8-tensorwise \
+  --config /path/to/int8_tensorwise_config.yaml \
+  --source /path/to/diffusion_pytorch_model.safetensors \
+  --out runs/export-int8-tensorwise \
+  --device cuda:0 \
+  --convrot \
+  --hash-output \
+  --json
+```
+
+Requires `quant.target_dtype: int8_tensorwise` in the config. Guide:
+[`quantization/int8_tensorwise.md`](quantization/int8_tensorwise.md).
+
 ## MXFP8 commands
 
 Export a full MXFP8 (OCP microscaling FP8) checkpoint for **stock ComfyUI's native**

@@ -84,7 +84,7 @@ def rotate_weight(weight, hadamard, group_size: int):
     if in_f % group_size != 0:
         raise PayloadWriteError(f"in_features {in_f} not divisible by ConvRot group_size {group_size}")
     n_groups = in_f // group_size
-    grouped = weight.view(out_f, n_groups, group_size)
+    grouped = weight.reshape(out_f, n_groups, group_size)
     h_t = hadamard.T.to(dtype=weight.dtype, device=weight.device)
     rotated = torch.matmul(grouped, h_t)
     return rotated.reshape(out_f, in_f)
@@ -102,6 +102,6 @@ def rotate_activation(x, hadamard, group_size: int):
     if features % group_size != 0:
         raise PayloadWriteError(f"features {features} not divisible by ConvRot group_size {group_size}")
     n_groups = features // group_size
-    grouped = x.view(*orig_shape[:-1], n_groups, group_size)
+    grouped = x.reshape(*orig_shape[:-1], n_groups, group_size)
     h_dev = hadamard.to(dtype=x.dtype, device=x.device)
-    return torch.matmul(grouped, h_dev).view(orig_shape)
+    return torch.matmul(grouped, h_dev).reshape(orig_shape)
