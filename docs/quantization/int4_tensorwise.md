@@ -18,21 +18,32 @@ same rollout sequence as int8_tensorwise. Native INT4 tensor-core speedup on
 | LTX-2.3 | `configs/ltx2_int4_tensorwise_mixed.yaml` | all attention `to_v` / `to_out.0` + gate projections (792 of 1,496) |
 | FLUX.2 | `configs/flux2_int4_tensorwise_mixed.yaml` | `*_attn.proj` + `single_blocks.*.linear2` (64 of 160) |
 
-## Measured results (L4 / SM 8.9, qwen-edit-2511, 20-step edit sample, PSNR vs bf16-sentinel)
+## Measured results (L4 / SM 8.9, qwen-edit-2511, 20 steps, PSNR vs bf16-sentinel)
 
-All three checkpoints ran the same eager comfy-kitchen build on the same GPU
-(quality comparison; speed needs the CUDA kernel):
+Quality: mean over 4 edit prompts, all checkpoints through the SAME eager
+comfy-kitchen build on the same GPU (single-image PSNR carries ±2 dB trajectory
+noise — always compare on multi-prompt means):
 
-| Checkpoint | Layers (int4/int8) | Size | PSNR |
+| Checkpoint | Layers (int4/int8) | Size | 4-prompt mean PSNR |
 | --- | --- | --- | --- |
-| int8_tensorwise (baseline) | 0 / 839 | 20.0 GB | 23.93 dB |
-| int4 mixed **+ MLP down-proj at int8** | 360 / 479 | 17.2 GB | 22.89 dB |
-| int4 mixed (shipped config) | 480 / 359 | 14.9 GB | 21.67 dB |
-| int4, paper-style list only (**no modulation fallback**) | 599 / 240 | 11.5 GB | **9.27 dB** ❌ |
+| int8_tensorwise (baseline) | 0 / 839 | 20.0 GB | 30.05 dB |
+| int4 mixed + MLP down-proj at int8 (quality variant) | 360 / 479 | 17.2 GB | 27.19 dB |
+| int4 mixed (**shipped default**) | 480 / 359 | 14.9 GB | 26.58 dB |
+| int4, paper-style list only (**no modulation fallback**) | 599 / 240 | 11.5 GB | ~9 dB ❌ (single image) |
 
-Single-image PSNR in the 20–24 dB regime carries ±2 dB trajectory noise (a
-strictly-more-precise variant measured 19.98 dB with a visually clean output) —
-treat the ladder as size/quality guidance, not a strict ordering.
+The quality variant's +0.61 dB mean advantage over the default splits 2:2 across
+prompts (within noise), while the default is 2.3 GB smaller and keeps 33% more
+layers at int4 (future INT4 tensor-core speed coverage) — hence the default.
+
+Speed baselines (same box, 20-step image, steady state after model load):
+
+| Path | bf16 | int8 | int4 mixed |
+| --- | --- | --- | --- |
+| eager reference (quality runs above) | 117 s | 288 s | 309–330 s |
+| **release form** (kitchen wheel, CUDA kernels) | 114 s | **87 s (1.31×)** | pending CUDA kernel |
+
+The eager path exists for correctness/quality work only; the int8 release-form
+line is the speed bar the future int4 CUDA kernel must beat on SM 7.5–8.9.
 
 **⚠️ adaLN modulation layers must never be int4.** With qwen's `img_mod.1` /
 `txt_mod.1` at int4 the output shows global saturation drift + grain (the
