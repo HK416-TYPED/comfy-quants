@@ -17,6 +17,7 @@ same rollout sequence as int8_tensorwise. Native INT4 tensor-core speedup on
 | Qwen-Image-Edit-2511 | `configs/qwen_image_edit_2511_int4_tensorwise_mixed.yaml` | attn value/output proj + **adaLN modulation** (359 of 839) — **E2E-validated** |
 | LTX-2.3 | `configs/ltx2_int4_tensorwise_mixed.yaml` | all attention `to_v` / `to_out.0` + gate projections (792 of 1,496) |
 | FLUX.2 | `configs/flux2_int4_tensorwise_mixed.yaml` | `*_attn.proj` + `single_blocks.*.linear2` (64 of 160) |
+| Krea 2 | `configs/krea2_int4_tensorwise_mixed.yaml` | `attn.wv`/`attn.wo` + `attn.gate` (modulation-class) (84 of 224) |
 
 ## Measured results (L4 / SM 8.9, qwen-edit-2511, 20 steps, PSNR vs bf16-sentinel)
 

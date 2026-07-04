@@ -12,6 +12,7 @@ model-family flows currently implemented for that format.
 | Export INT8 W8A8 (+ConvRot) checkpoints | [`quantization/int8_w8a8.md`](quantization/int8_w8a8.md) |
 | Export INT8 tensorwise (stock ComfyUI) checkpoints | [`quantization/int8_tensorwise.md`](quantization/int8_tensorwise.md) |
 | Export INT4 tensorwise W4A4 (+mixed int8) checkpoints | [`quantization/int4_tensorwise.md`](quantization/int4_tensorwise.md) |
+| Quantize Krea 2 (INT8 / INT4 mixed) | [`quantization/krea2.md`](quantization/krea2.md) |
 | Export MXFP8 (microscaling, Blackwell) checkpoints | [`quantization/mxfp8.md`](quantization/mxfp8.md) |
 | Export NVFP4 (FP4 microscaling, Blackwell) checkpoints | [`quantization/nvfp4.md`](quantization/nvfp4.md) |
 | Quantize the Anima family (FP8/MXFP8/NVFP4) | [`quantization/anima.md`](quantization/anima.md) |

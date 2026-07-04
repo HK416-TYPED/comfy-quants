@@ -11,7 +11,8 @@ model-family flows for that format. Tensor/storage definitions live under
 | FP8 E4M3 / E5M2 checkpoint | [`fp8.md`](fp8.md) | [`../formats/fp8.md`](../formats/fp8.md) | listed in the FP8 guide |
 | INT8 W8A8 (+ConvRot) checkpoint | [`int8_w8a8.md`](int8_w8a8.md) | [`../formats/int8_w8a8.md`](../formats/int8_w8a8.md) | listed in the INT8 W8A8 guide (ComfyUI-INT8-Fast, retired) |
 | INT8 tensorwise checkpoint | [`int8_tensorwise.md`](int8_tensorwise.md) | [`../formats/int8_tensorwise.md`](../formats/int8_tensorwise.md) | listed in the INT8 tensorwise guide (stock ComfyUI >= 0.27, SM >= 7.5) |
-| INT4 tensorwise W4A4 checkpoint (+mixed int8 fallback) | [`int4_tensorwise.md`](int4_tensorwise.md) | [`../formats/int4_tensorwise.md`](../formats/int4_tensorwise.md) | ltx2 / flux2 mixed configs (comfy-kitchen TensorWiseINT4Layout runtime; SM 7.5-8.9 tensor cores) |
+| INT4 tensorwise W4A4 checkpoint (+mixed int8 fallback) | [`int4_tensorwise.md`](int4_tensorwise.md) | [`../formats/int4_tensorwise.md`](../formats/int4_tensorwise.md) | qwen-edit / ltx2 / flux2 / krea2 mixed configs (comfy-kitchen TensorWiseINT4Layout runtime; SM 7.5-8.9 tensor cores) |
+| Krea 2 family (INT8 / INT4 mixed) | [`krea2.md`](krea2.md) | — | 28-block K2 single-stream DiT, 224 Linears |
 | MXFP8 microscaling checkpoint | [`mxfp8.md`](mxfp8.md) | [`../formats/mxfp8.md`](../formats/mxfp8.md) | listed in the MXFP8 guide (stock ComfyUI, Blackwell) |
 | NVFP4 microscaling checkpoint | [`nvfp4.md`](nvfp4.md) | [`../formats/nvfp4.md`](../formats/nvfp4.md) | listed in the NVFP4 guide (stock ComfyUI, Blackwell) |
 | INT4 SVDQuant W4A4 tile-pack | [`int4.md`](int4.md) | [`../formats/svdquant_w4a4_kitchen_tilepack.md`](../formats/svdquant_w4a4_kitchen_tilepack.md) | listed in the INT4 guide |

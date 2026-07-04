@@ -1,0 +1,35 @@
+project:
+  name: krea2-int8-tensorwise-v0
+  created_by: comfy_quants
+  seed: 42
+model:
+  family: krea2
+  model_id: krea/Krea-2-Turbo
+  revision: "<pin-this>"
+  dtype: bf16
+  source: huggingface
+  trust_remote_code: false
+  components:
+    transformer: quantize
+    text_encoder: keep_bf16
+    vae: keep_bf16
+quant:
+  algorithm: int8_tensorwise
+  target_dtype: int8_tensorwise
+  scale:
+    granularity: per_channel
+    axis: out_features
+    method: amax
+  rounding: nearest_even
+  modules:
+    # Matches the community-validated Krea-2 INT8 selection: every block Linear
+    # plus the shared modulation projector (int8-safe; must never be int4).
+    include:
+      - "blocks.*"
+    exclude: []
+  fallback:
+    on_error: keep_bf16
+artifact:
+  format: safetensors_quant
+  compatibility_target: L2
+  write_module_reports: true

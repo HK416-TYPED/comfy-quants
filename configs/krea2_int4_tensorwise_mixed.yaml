@@ -1,0 +1,42 @@
+project:
+  name: krea2-int4-tensorwise-mixed-v0
+  created_by: comfy_quants
+  seed: 42
+model:
+  family: krea2
+  model_id: krea/Krea-2-Turbo
+  revision: "<pin-this>"
+  dtype: bf16
+  source: huggingface
+  trust_remote_code: false
+  components:
+    transformer: quantize
+    text_encoder: keep_bf16
+    vae: keep_bf16
+quant:
+  algorithm: int4_tensorwise
+  target_dtype: int4_tensorwise
+  scale:
+    granularity: per_channel
+    axis: out_features
+    method: amax
+  rounding: nearest_even
+  modules:
+    include:
+      - "blocks.*"
+    exclude: []
+    # Mixed W4A4 quality recipe (qwen L4 E2E findings mapped onto Krea-2):
+    # attention value/output projections (ConvRot paper) plus the output gating
+    # projection (modulation-class — modulation must never be int4; Krea-2's
+    # per-block mod.lin is a bias parameter and tproj stays bf16 outside the
+    # include set). INITIAL mapping — refine after E2E A/B.
+    int8_fallback:
+      - "blocks.*.attn.wv"
+      - "blocks.*.attn.wo"
+      - "blocks.*.attn.gate"
+  fallback:
+    on_error: keep_bf16
+artifact:
+  format: safetensors_quant
+  compatibility_target: L2
+  write_module_reports: true

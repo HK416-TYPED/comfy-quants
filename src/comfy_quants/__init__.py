@@ -40,6 +40,7 @@ from comfy_quants.model_adapters import flux2 as _flux2_adapter  # noqa: E402,F4
 from comfy_quants.model_adapters import ltxv as _ltxv_adapter  # noqa: E402,F401
 from comfy_quants.model_adapters import ltx2 as _ltx2_adapter  # noqa: E402,F401
 from comfy_quants.model_adapters import ideogram4 as _ideogram4_adapter  # noqa: E402,F401
+from comfy_quants.model_adapters import krea2 as _krea2_adapter  # noqa: E402,F401
 
 
 def list_model_adapters() -> list[str]:

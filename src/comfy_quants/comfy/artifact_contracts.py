@@ -120,6 +120,15 @@ _STOCK_DIT_CONTRACTS: dict[str, dict[str, Any]] = {
         "model_contract_schema": "ideogram4_static_contract.v1",
         "owner_module": "comfy_quants.model_adapters.ideogram4",
     },
+    "krea2": {
+        "schema_version": "krea2_contract.v1",
+        "family": "krea2",
+        "artifact_target": "comfyui",
+        "export_name": "Krea-2",
+        "consumer_layout": "ComfyUI krea2",
+        "model_contract_schema": "krea2_static_contract.v1",
+        "owner_module": "comfy_quants.model_adapters.krea2",
+    },
 }
 
 
