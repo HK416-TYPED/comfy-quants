@@ -79,12 +79,15 @@ class TestKrea2Contract(unittest.TestCase):
         self.assertEqual(len(mods), 224)  # 28 blocks x 8 linears
         fallback = cfg.quant.modules["int8_fallback"]
         hits = [m for m in mods if any(fnmatch.fnmatchcase(m, g) for g in fallback)]
-        # wv + wo + gate per block: the value/output projections (ConvRot paper)
-        # plus the modulation-class gating projection.
-        self.assertEqual(len(hits), 84)
-        self.assertIn("blocks.0.attn.gate", hits)
+        # Data-driven selection (leave-one-out sensitivity, impact-per-byte
+        # knapsack at the class-glob byte budget): all wv+wk, 27 wo, plus a
+        # handful of the most sensitive mlp.down/gate/wq/up layers.
+        self.assertEqual(len(hits), 96)
+        self.assertIn("blocks.0.attn.wo", hits)
         self.assertIn("blocks.27.attn.wv", hits)
-        self.assertNotIn("blocks.0.mlp.down", hits)
+        self.assertIn("blocks.0.attn.wk", hits)
+        self.assertIn("blocks.27.mlp.down", hits)  # top-4 global impact
+        self.assertNotIn("blocks.0.mlp.gate", hits)
         # tproj (shared modulation projector) must not be selected at int4.
         self.assertFalse(any(m.startswith("tproj") for m in mods))
 
